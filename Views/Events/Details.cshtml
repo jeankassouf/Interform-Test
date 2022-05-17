@@ -1,0 +1,156 @@
+﻿@model events.Models.Event
+
+@{
+    ViewData["Title"] = "Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>Event</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Title)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Title)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.EventDate)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.EventDate)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-info">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>
+<br />
+<div class="row">
+    <div class="col-md-12">
+        <form enctype="multipart/form-data" asp-controller="EventFiles" asp-action="Create" method="post">
+            <div class="d-inline-flex form-group">
+                <div class=" col-md-6">
+                    <p>
+                        Upload Files
+                    </p>
+                    <input type="file" name="eventFiles" accept=".jpeg,.png,.csv,.mp4,.pdf" multiple />
+                    <input type="hidden" name="EventId" value="@Model.Id" />
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <input type="submit" value="Upload" class="btn btn-primary" />
+            </div>
+
+        </form>
+    </div>
+    <br />
+    <br />
+    @if (Model.EventFiles.Count > 0)
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        File Name
+                    </th>
+                    <th>
+                        Type
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.EventFiles)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Name)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Type)
+                        </td>
+                        <td>
+                            @if (item.Type == "Document")
+                            {
+                                <a asp-controller="EventFiles" asp-action="Download" asp-route-filename="@item.Name" class="btn btn-info">Download</a>
+                            }
+                            else
+                            {
+                                <a href="@item.Path" target="_blank" class="btn btn-info">View</a>
+                            }
+                            <a class="btn btn-danger" onclick="deleteConfirm('@item.Name','@item.Id')">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+</div>
+
+
+<!--bootstra pop up confirmation dialog-->
+<div class="modal fade" id="delete-conformation" tabindex="-1" role="dialog" aria-labelledby="deleteconformation">
+    <div class="modal-dialog" style="width:501px !important;margin:0 auto;">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#d9534f;color:white;">
+                <h4 class="modal-title" id="delete-conformation">
+                    Delete Confirmation
+                </h4>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="form-group">
+                        <div class="col-sm-12">
+                            <span>
+                                Are you sure you want to delete?
+                            </span>
+                            <strong id="deletedValueName">
+
+                            </strong>
+                            <input type="hidden" id="deletedValueId" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <input type="submit" class="btn btn-danger" value="Delete" onclick="deleteData()" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script type="text/javascript">
+        //this is only display bootstrap modal pop up dialog
+        var deleteConfirm = function (val,id) {
+            $('#deletedValueName').text(val);
+            $('#deletedValueId').val(id);
+            $('#delete-conformation').modal('show');
+        }
+        //call this function after click on confirm delete button
+        var deleteData = function () {
+        $('#divLoading').show();
+         var id = $('#deletedValueId').val();
+        $.ajax({
+            type: "POST",
+            url: '/EventFiles/Delete/' + id,
+            headers: { "RequestVerificationToken": $('input[name="__RequestVerificationToken"]').val() },
+            success: function (result) {
+                location.reload();
+               $("#delete-conformation").modal('hide');
+            },
+            error: function () {
+                $("#delete-conformation").modal('hide');
+            }
+        });
+       }
+    </script>
+}
